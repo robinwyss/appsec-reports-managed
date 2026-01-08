@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vulnerability Report - {{ report.management_zone }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        header {
+            border-bottom: 3px solid #1e88e5;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #1e88e5;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .meta-info {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        h2 {
+            color: #1e88e5;
+            font-size: 1.5em;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .summary-card {
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        
+        .summary-card.critical { border-left-color: #d32f2f; }
+        .summary-card.high { border-left-color: #f57c00; }
+        .summary-card.medium { border-left-color: #fbc02d; }
+        .summary-card.low { border-left-color: #388e3c; }
+        .summary-card.total { border-left-color: #1e88e5; }
+        
+        .summary-card h3 {
+            font-size: 0.9em;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        
+        .summary-card .count {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background-color: white;
+        }
+        
+        thead {
+            background-color: #1e88e5;
+            color: white;
+        }
+        
+        th, td {
+            padding: 5px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            font-weight: 600;
+        }
+        
+        tbody tr:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .severity-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .severity-critical { background-color: #d32f2f; color: white; }
+        .severity-high { background-color: #f57c00; color: white; }
+        .severity-medium { background-color: #fbc02d; color: #333; }
+        .severity-low { background-color: #388e3c; color: white; }
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-style: italic;
+        }
+        
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+            color: #999;
+            font-size: 0.85em;
+        }
+        
+        @media print {
+            body { background-color: white; padding: 0; }
+            .container { box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Vulnerability Report: {{ report.management_zone }}</h1>
+            <div class="meta-info">
+                <p><strong>Report Period:</strong> {{ report.start_time|format_datetime }} to {{ report.end_time|format_datetime }}</p>
+                <p><strong>Generated:</strong> {{ report.generated_at|format_datetime }}</p>
+            </div>
+        </header>
+        
+        <section id="executive-summary">
+            <h2>Executive Summary</h2>
+            <div class="summary-grid">
+                <div class="summary-card critical">
+                    <h3>Critical</h3>
+                    <div class="count">{{ severity_stats.critical }}</div>
+                </div>
+                <div class="summary-card high">
+                    <h3>High</h3>
+                    <div class="count">{{ severity_stats.high }}</div>
+                </div>
+                <div class="summary-card medium">
+                    <h3>Medium</h3>
+                    <div class="count">{{ severity_stats.medium }}</div>
+                </div>
+                <div class="summary-card low">
+                    <h3>Low</h3>
+                    <div class="count">{{ severity_stats.low }}</div>
+                </div>
+                <div class="summary-card total">
+                    <h3>Total Vulnerabilities</h3>
+                    <div class="count">{{ severity_stats.total }}</div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="new-vulnerabilities">
+            <h2>New Vulnerabilities Detected ({{ new_vulnerabilities|length }})</h2>
+            {% if new_vulnerabilities %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>CVE</th>
+                        <th>Severity</th>
+                        <th>CVSS Score</th>
+                        <th>First Seen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for vuln in new_vulnerabilities %}
+                    <tr>
+                        <td>{{ vuln.display_id }}</td>
+                        <td>{{ vuln.title }}</td>
+                        <td>{{ vuln.cve_id or 'N/A' }}</td>
+                        <td><span class="severity-badge severity-{{ vuln.severity.value.lower() }}">{{ vuln.severity.value }}</span></td>
+                        <td>{{ vuln.cvss_score or 'N/A' }}</td>
+                        <td>{{ vuln.first_seen|format_datetime }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="no-data">No new vulnerabilities detected in this period.</p>
+            {% endif %}
+        </section>
+        
+        <section id="by-process-group">
+            <h2>Vulnerabilities by Process Group</h2>
+            {% if process_groups %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Process Group</th>
+                        <th>Critical</th>
+                        <th>High</th>
+                        <th>Medium</th>
+                        <th>Low</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pg in process_groups %}
+                    <tr>
+                        <td>{{ pg.process_group_name }}</td>
+                        <td>{{ pg.severity_stats.critical }}</td>
+                        <td>{{ pg.severity_stats.high }}</td>
+                        <td>{{ pg.severity_stats.medium }}</td>
+                        <td>{{ pg.severity_stats.low }}</td>
+                        <td><strong>{{ pg.total_vulnerabilities }}</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="no-data">No process group data available.</p>
+            {% endif %}
+        </section>
+        
+        <section id="by-host">
+            <h2>Vulnerabilities by Host</h2>
+            {% if hosts %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Host</th>
+                        <th>Critical</th>
+                        <th>High</th>
+                        <th>Medium</th>
+                        <th>Low</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for host in hosts %}
+                    <tr>
+                        <td>{{ host.host_name }}</td>
+                        <td>{{ host.severity_stats.critical }}</td>
+                        <td>{{ host.severity_stats.high }}</td>
+                        <td>{{ host.severity_stats.medium }}</td>
+                        <td>{{ host.severity_stats.low }}</td>
+                        <td><strong>{{ host.total_vulnerabilities }}</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="no-data">No host data available.</p>
+            {% endif %}
+        </section>
+        
+        <section id="all-vulnerabilities">
+            <h2>All Vulnerabilities ({{ report.vulnerabilities|length }})</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>CVE</th>
+                        <th>Severity</th>
+                        <th>CVSS</th>
+                        <th>Status</th>
+                        <th>First Seen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for vuln in report.vulnerabilities %}
+                    <tr>
+                        <td>{{ vuln.display_id }}</td>
+                        <td>{{ vuln.title }}</td>
+                        <td>{{ vuln.cve_id or 'N/A' }}</td>
+                        <td><span class="severity-badge severity-{{ vuln.severity.value.lower() }}">{{ vuln.severity.value }}</span></td>
+                        <td>{{ vuln.cvss_score or 'N/A' }}</td>
+                        <td>{{ vuln.status }}</td>
+                        <td>{{ vuln.first_seen|format_datetime }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+        
+        <footer>
+            <p>Generated by Dynatrace Vulnerability Report Generator</p>
+        </footer>
+    </div>
+</body>
+</html>
