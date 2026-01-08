@@ -167,4 +167,3 @@ Each report contains:
 ## Logging
 
 Logs are written to `output.log`. Default log level is INFO, can be changed to DEBUG with the `--debug` flag.
-# appsec-reports-managed
