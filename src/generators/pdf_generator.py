@@ -1,11 +1,11 @@
 """
-PDF report generator using WeasyPrint.
+PDF report generator using Playwright.
 """
 
 import logging
 from pathlib import Path
 from typing import Dict
-from weasyprint import HTML
+from playwright.sync_api import sync_playwright
 
 from .html_generator import HtmlReportGenerator
 
@@ -34,9 +34,13 @@ class PdfReportGenerator:
             # Generate HTML
             self.html_generator.generate(report_data, temp_html)
             
-            # Convert HTML to PDF using WeasyPrint
-            html = HTML(filename=str(temp_html))
-            html.write_pdf(str(output_file))
+            # Convert HTML to PDF using Playwright
+            with sync_playwright() as p:
+                browser = p.chromium.launch()
+                page = browser.new_page()
+                page.goto(f"file://{temp_html.absolute()}")
+                page.pdf(path=str(output_file))
+                browser.close()
             
             logging.info("PDF report generated successfully: %s", output_file)
             
